@@ -13,7 +13,7 @@ def send_test_message(token, chat_id, message):
         print(f"Ошибка при отправке сообщения в Telegram: {e}")
 
 # Замените эти значения на ваши реальные
-bot_token = 'YOUR_BOT_TOKEN'
+bot_token = '6482784614:AAEgqlW2JhisaGyo26WYVytrgl-8F-Nwlmk'
 channel_id = '-1002133823734'  # ID вашего канала
 message = 'Hello World'
 
