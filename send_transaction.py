@@ -51,7 +51,7 @@ def get_random_usdt_transaction(api_key, min_value, max_value):
 
 def send_message(token, chat_id, message):
     url = f"https://api.telegram.org/bot{token}/sendMessage"
-    data = {"chat_id": chat_id, "text": message}
+    data = {"chat_id": chat_id, "text": message, "parse_mode": "HTML"}
     
     try:
         print("Отправка сообщения в Telegram...")
@@ -104,7 +104,7 @@ def main():
     else:
         print("Не удалось найти подходящую транзакцию.")
 
-    delay = random.randint(3600, 7200)
+    delay = random.randint(30, 60)
     print(f"Ожидание {delay} секунд...")
     time.sleep(delay)
 
