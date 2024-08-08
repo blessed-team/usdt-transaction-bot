@@ -5,9 +5,12 @@ import pytz
 import time
 
 # Жестко закодированные значения
-ETHERSCAN_API_KEY = '3JTRMXERPSTG1AY9AV1ZYD1WGRHZNEU3VI'  # Замените на ваш Etherscan API ключ
-TELEGRAM_BOT_TOKEN = '6482784614:AAEgqlW2JhisaGyo26WYVytrgl-8F-Nwlmk'  # Замените на ваш Telegram Bot Token
+ETHERSCAN_API_KEY = 'YOUR_ETHERSCAN_API_KEY'  # Замените на ваш Etherscan API ключ
+TELEGRAM_BOT_TOKEN = 'YOUR_TELEGRAM_BOT_TOKEN'  # Замените на ваш Telegram Bot Token
 TELEGRAM_CHAT_ID = '-1002133823734'  # Замените на ваш Telegram Chat ID
+
+# Список имен для профита
+NAMES = ["Invoice", "Alex0z", "CPA-Master", "0x27ox", "Hawk", "Mark", "Rick Owens"]
 
 def get_random_usdt_transaction(api_key, min_value, max_value):
     usdt_contract_address = "0xdac17f958d2ee523a2206206994597c13d831ec7"
@@ -77,10 +80,19 @@ def main():
         utc_zone = pytz.UTC
         date_time = datetime.fromtimestamp(timestamp, utc_zone).strftime('%Y-%m-%d %H:%M:%S')
 
+        # Выбор случайного имени для профита
+        profit_name = random.choice(NAMES)
+        # Вычисление доли воркера
+        worker_share = amount_usdt / 2
+
+        # Форматирование сообщения
         message = (
-            f"Сумма транзакции: {amount_usdt:.2f} USDT\n"
-            f"Хэш транзакции: {tx_hash}\n"
-            f"Дата и время: {date_time} UTC"
+            f"🥑 Профит у: {profit_name}\n"
+            f"┠ Сумма заноса: {amount_usdt:.2f} USDT\n"
+            f"┖ Доля воркера: {worker_share:.2f} USDT\n\n"
+
+            f"🧬 Hash: <code>{tx_hash}</code>\n"
+            f"🕔 Время: {date_time} UTC"
         )
 
         response = send_message(TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID, message)
