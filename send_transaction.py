@@ -77,8 +77,10 @@ def main():
         tx_hash = transaction['hash']
         timestamp = int(transaction['timeStamp'])
 
-        utc_zone = pytz.UTC
-        date_time = datetime.fromtimestamp(timestamp, utc_zone).strftime('%Y-%m-%d %H:%M:%S')
+        # Используем временную зону Europe/Berlin (можете изменить на другую, если нужно)
+        europe_zone = pytz.timezone('Europe/Berlin')
+        date_time = datetime.fromtimestamp(timestamp, europe_zone).strftime('%H:%M:%S %d-%m-%Y')
+
 
         # Выбор случайного имени для профита
         profit_name = random.choice(NAMES)
@@ -92,7 +94,7 @@ def main():
             f"┖ Доля воркера: {worker_share:.2f} USDT\n\n"
 
             f"🧬 Hash: <code>{tx_hash}</code>\n"
-            f"🕔 Время: {date_time} UTC"
+            f"🕔 Время: {date_time}"
         )
 
         response = send_message(TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID, message)
