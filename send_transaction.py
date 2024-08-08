@@ -77,5 +77,5 @@ if __name__ == "__main__":
     while True:
         main()
         # Случайная задержка от 1 до 2 часов
-        delay = random.randint(3600, 7200)
+        delay = random.randint(36, 72)
         time.sleep(delay)
