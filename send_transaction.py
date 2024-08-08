@@ -2,6 +2,7 @@ import os
 import requests
 import random
 from datetime import datetime
+import pytz
 import time
 
 def get_random_usdt_transaction(api_key, min_value, max_value):
@@ -57,7 +58,10 @@ def main():
         amount_usdt = float(transaction['value']) / 10**6
         tx_hash = transaction['hash']
         timestamp = int(transaction['timeStamp'])
-        date_time = datetime.utcfromtimestamp(timestamp).strftime('%Y-%m-%d %H:%M:%S')
+
+        # Используем pytz для преобразования в UTC
+        utc_zone = pytz.UTC
+        date_time = datetime.fromtimestamp(timestamp, utc_zone).strftime('%Y-%m-%d %H:%M:%S')
 
         message = (
             f"Сумма транзакции: {amount_usdt:.2f} USDT\n"
@@ -77,5 +81,5 @@ if __name__ == "__main__":
     while True:
         main()
         # Случайная задержка от 1 до 2 часов
-        delay = random.randint(36, 72)
+        delay = random.randint(3600, 7200)
         time.sleep(delay)
