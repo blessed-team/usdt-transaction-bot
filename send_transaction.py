@@ -14,7 +14,7 @@ NAMES = ["Invoice", "Alex0z", "CPA-Master", "0x27ox", "Hawk", "Mark", "Rick Owen
 
 def round_up(value: float, multiple: float) -> float:
     """Округляет значение до ближайшего большего числа, кратного multiple."""
-    return multiple * (int(value / multiple) + 1)
+    return multiple * (value // multiple)
 
 def get_random_usdt_transaction(api_key, min_value, max_value):
     """Получает случайную транзакцию USDT из Etherscan."""
