@@ -5,8 +5,8 @@ import pytz
 import time
 
 # Жестко закодированные значения
-ETHERSCAN_API_KEY = 'YOUR_ETHERSCAN_API_KEY'  # Замените на ваш Etherscan API ключ
-TELEGRAM_BOT_TOKEN = 'YOUR_TELEGRAM_BOT_TOKEN'  # Замените на ваш Telegram Bot Token
+ETHERSCAN_API_KEY = '3JTRMXERPSTG1AY9AV1ZYD1WGRHZNEU3VI'  # Замените на ваш Etherscan API ключ
+TELEGRAM_BOT_TOKEN = '6482784614:AAEgqlW2JhisaGyo26WYVytrgl-8F-Nwlmk '  # Замените на ваш Telegram Bot Token
 TELEGRAM_CHAT_ID = '-1002133823734'  # Замените на ваш Telegram Chat ID
 
 # Список имен для профита
