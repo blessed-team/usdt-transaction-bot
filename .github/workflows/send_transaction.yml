@@ -2,7 +2,7 @@ name: Send Random USDT Transaction
 
 on:
   schedule:
-    - cron: '0 */1 * * *'  # Запускать каждый час
+     - cron: '*/15 * * * *'  # Запускать каждые 15 минут
   workflow_dispatch: # Позволяет запускать вручную через интерфейс GitHub
 
 jobs:
