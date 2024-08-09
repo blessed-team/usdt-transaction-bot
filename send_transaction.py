@@ -6,22 +6,15 @@ import time
 import math
 
 # Ваши API ключи и токены
-ETHERSCAN_API_KEY = '3JTRMXERPSTG1AY9AV1ZYD1WGRHZNEU3VI'  # Etherscan API ключ (для ERC20)
 BSC_API_KEY = '7C2J1YVTVAAER9TSDZHAC6WK8Z3Y5B8ABI'  # BscScan API ключ (для BEP20)
 TELEGRAM_BOT_TOKEN = '6482784614:AAEgqlW2JhisaGyo26WYVytrgl-8F-Nwlmk'  # Telegram Bot Token
 TELEGRAM_CHAT_ID = '-1002133823734'  # Telegram Chat ID
 
-# Названия для профита
-NAMES = ["Invoice", "Alex0z", "CPA-Master", "0x27ox", "Hawk", "Mark", "Rick Owens"]
+# Адрес контракта BEP20
+CONTRACT_ADDRESS = "0x55d398326f99059ff775485246999027b3197955"  # USDT BEP20
 
-# Адреса контрактов
-CONTRACT_ADDRESSES = {
-    "ERC20": "0xdac17f958d2ee523a2206206994597c13d831ec7",  # USDT ERC20
-    "BEP20": "0x55d398326f99059ff775485246999027b3197955"   # USDT BEP20
-}
-
-def get_random_usdt_transaction(api_key, contract_address, network):
-    url = f"https://api.{network}.com/api"
+def get_random_usdt_transaction(api_key, contract_address):
+    url = f"https://api.bscscan.com/api"
 
     params = {
         "module": "account",
@@ -36,7 +29,7 @@ def get_random_usdt_transaction(api_key, contract_address, network):
     }
 
     try:
-        print(f"Fetching transactions from {network}...")
+        print("Fetching transactions from BSC...")
         response = requests.get(url, params=params)
         response.raise_for_status()
         transactions = response.json().get('result', [])
@@ -45,7 +38,7 @@ def get_random_usdt_transaction(api_key, contract_address, network):
         if transactions:
             return random.choice(transactions)
         else:
-            print(f"No transactions found for {network}.")
+            print("No transactions found.")
             return None
 
     except requests.RequestException as e:
@@ -69,12 +62,7 @@ def send_message(token, chat_id, message):
 def main():
     print("Starting the script...")
     
-    # Выбор случайной сети
-    network = "bscscan"  # Используем BSC для BEP20
-    api_key = BSC_API_KEY
-    contract_address = CONTRACT_ADDRESSES["BEP20"]
-    
-    transaction = get_random_usdt_transaction(api_key, contract_address, network)
+    transaction = get_random_usdt_transaction(BSC_API_KEY, CONTRACT_ADDRESS)
 
     if transaction:
         # Обработка и округление данных
@@ -88,15 +76,14 @@ def main():
         date_time = datetime.fromtimestamp(timestamp, europe_zone).strftime('%H:%M:%S %d-%m-%Y')
 
         # Выбор случайного имени
-        profit_name = random.choice(NAMES)
+        profit_name = random.choice(["Invoice", "Alex0z", "CPA-Master", "0x27ox", "Hawk", "Mark", "Rick Owens"])
         worker_share = amount / 2
 
         # Формирование сообщения
         message = (
-            f"💲 Профит у: <b>{profit_name}</b>\n"
+            f"🥑 Профит у: <b>{profit_name}</b>\n"
             f"┠ Сумма заноса: <b>{amount:.2f}</b> USDT <i>BEP20</i>\n"
             f"┖ Доля воркера: <b>{worker_share:.2f}</b> USDT <i>BEP20</i>\n\n"
-            
             f"🧬 Hash: <code>{tx_hash}</code>\n"
             f"🕔 Время: {date_time}"
         )
