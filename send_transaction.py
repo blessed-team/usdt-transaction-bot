@@ -3,22 +3,21 @@ import random
 from datetime import datetime
 import pytz
 import time
-import math
 
-# API ключи и токены
-ETHERSCAN_API_KEY = '3JTRMXERPSTG1AY9AV1ZYD1WGRHZNEU3VI'
-TRONGRID_API_KEY = '175a5b7f-e2c2-4a3a-9bd9-bf2041feb02c'
-TELEGRAM_BOT_TOKEN = '6482784614:AAEgqlW2JhisaGyo26WYVytrgl-8F-Nwlmk'
-TELEGRAM_CHAT_ID = '-1002133823734'
+# Конфигурация API и токенов
+ETHERSCAN_API_KEY = '3JTRMXERPSTG1AY9AV1ZYD1WGRHZNEU3VI'  # Etherscan API Key для ERC20
+TRONGRID_API_KEY = '175a5b7f-e2c2-4a3a-9bd9-bf2041feb02c'  # TronGrid API Key для TRC20
+TELEGRAM_BOT_TOKEN = '6482784614:AAEgqlW2JhisaGyo26WYVytrgl-8F-Nwlmk'  # Telegram Bot Token
+TELEGRAM_CHAT_ID = '-1002133823734'  # Telegram Chat ID
 
-# Адреса контрактов
-ERC20_CONTRACT_ADDRESS = "0xdac17f958d2ee523a2206206994597c13d831ec7"
-TRC20_CONTRACT_ADDRESS = "TF9i9VEzaayhog5EmGuq4hhYZnnDtodta3"
+# Контракты
+ERC20_CONTRACT_ADDRESS = "0xdac17f958d2ee523a2206206994597c13d831ec7"  # USDT ERC20 контракт
+TRC20_CONTRACT_ADDRESS = "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t"  # USDT TRC20 контракт
 
-# Список имён
+# Список имен
 NAMES = ["Invoice", "Alex0z", "CPA-Master", "0x27ox", "Hawk", "Mark", "Rick Owens"]
 
-def get_random_usdt_transaction(api_key, contract_address, network, min_value, max_value):
+def get_random_transaction(api_key, contract_address, network):
     if network == "ERC20":
         url = "https://api.etherscan.io/api"
         params = {
@@ -33,35 +32,41 @@ def get_random_usdt_transaction(api_key, contract_address, network, min_value, m
             "apikey": api_key
         }
     elif network == "TRC20":
-        url = "https://api.trongrid.io/v1/accounts/transactions"
+        url = "https://api.trongrid.io/v1/accounts/{}/transactions".format(contract_address)
         params = {
-            "contract_address": contract_address,
+            "only_to": True,
             "limit": 100
         }
-        headers = {"TRON-PRO-API-KEY": api_key}
     else:
-        raise ValueError("Unsupported network")
+        print("Неподдерживаемая сеть.")
+        return None
 
     try:
-        print(f"Запрос транзакций к {network}...")
-        response = requests.get(url, params=params, headers=headers if network == "TRC20" else None)
+        print(f"Получение транзакций из {network}...")
+        response = requests.get(url, params=params)
         response.raise_for_status()
-        transactions = response.json().get('result', []) if network == "ERC20" else response.json().get('data', [])
+        transactions = response.json().get('result', [])
         print(f"Получено {len(transactions)} транзакций.")
 
         if network == "ERC20":
-            filtered_transactions = [
-                tx for tx in transactions if min_value <= float(tx['value']) / 10**6 <= max_value
-            ]
-        else:
-            filtered_transactions = [
-                tx for tx in transactions if min_value <= float(tx['amount']) / 10**6 <= max_value
-            ]
+            filtered_transactions = [tx for tx in transactions if 300 <= float(tx['value']) / 10**6 <= 1400]
+            if filtered_transactions:
+                return random.choice(filtered_transactions)
+            else:
+                print("Нет подходящих транзакций в ERC20.")
+                return None
 
-        if filtered_transactions:
-            return random.choice(filtered_transactions)
+        elif network == "TRC20":
+            if transactions:
+                # Фильтруем транзакции по значениям
+                filtered_transactions = [tx for tx in transactions if 300 <= float(tx['amount']) / 10**6 <= 1400]
+                if filtered_transactions:
+                    return random.choice(filtered_transactions)
+                else:
+                    print("Нет подходящих транзакций в TRC20.")
+                    return None
         else:
-            print("Нет подходящих транзакций.")
+            print("Ошибка при получении транзакций.")
             return None
 
     except requests.RequestException as e:
@@ -76,42 +81,47 @@ def send_message(token, chat_id, message):
         print("Отправка сообщения в Telegram...")
         response = requests.post(url, data=data)
         response.raise_for_status()
-        print(f"Сообщение отправлено. Код состояния: {response.status_code}")
-        print(f"Ответ от Telegram: {response.json()}")
+        print(f"Ответ от Telegram: {response.status_code}")
+        print(f"Ответ: {response.json()}")
         return response
     except requests.RequestException as e:
-        print(f"Ошибка при отправке сообщения в Telegram: {e}")
+        print(f"Ошибка при отправке сообщения: {e}")
         return None
+
+def round_down(amount):
+    return int(amount)
+
+def format_amount(amount):
+    return f"{amount:.2f}"
 
 def main():
     print("Запуск скрипта...")
     
-    min_value = 300
-    max_value = 1400
-
-    network = random.choice(["ERC20", "TRC20"])
+    networks = ["ERC20", "TRC20"]
+    network = random.choice(networks)
     contract_address = ERC20_CONTRACT_ADDRESS if network == "ERC20" else TRC20_CONTRACT_ADDRESS
-    transaction = get_random_usdt_transaction(ETHERSCAN_API_KEY, contract_address, network, min_value, max_value)
+    
+    transaction = get_random_transaction(ETHERSCAN_API_KEY, contract_address, network)
 
     if transaction:
-        amount_usdt = float(transaction['value']) / 10**6 if network == "ERC20" else float(transaction['amount']) / 10**6
+        amount = float(transaction['value']) / 10**6 if network == "ERC20" else float(transaction['amount']) / 10**6
         tx_hash = transaction['hash']
-        timestamp = int(transaction['timeStamp']) if network == "ERC20" else int(transaction['timestamp'])
+        timestamp = int(transaction['timestamp']) if network == "TRC20" else int(transaction['timeStamp'])
 
-        # Форматирование времени
+        # Обработка времени и даты
         europe_zone = pytz.timezone('Europe/Berlin')
         date_time = datetime.fromtimestamp(timestamp, europe_zone).strftime('%H:%M:%S %d-%m-%Y')
 
-        # Выбор имени
+        # Выбор имени и расчёт доли воркера
         profit_name = random.choice(NAMES)
-        # Расчет доли воркера
-        worker_share = amount_usdt / 2
+        amount = round_down(amount)
+        worker_share = round_down(amount / 2)
 
         # Формирование сообщения
         message = (
             f"🥑 Профит у: {profit_name}\n"
-            f"┠ Сумма заноса: <b>{amount_usdt:.2f} USDT {network}</b>\n"
-            f"┖ Доля воркера: <b>{worker_share:.2f} USDT ({network})</b>\n\n"
+            f"┠ Сумма заноса: <b>{format_amount(amount)} USDT</b> <i>{network}</i>\n"
+            f"┖ Доля воркера: <b>{format_amount(worker_share)} USDT</b> <i>{network}</i>\n\n"
             f"🧬 Hash: <code>{tx_hash}</code>\n"
             f"🕔 Время: {date_time}"
         )
@@ -123,10 +133,10 @@ def main():
         else:
             print("Не удалось отправить сообщение.")
     else:
-        print("Не удалось получить подходящую транзакцию.")
+        print("Не удалось получить транзакцию.")
 
-    delay = random.randint(60, 120)
-    print(f"Задержка {delay} секунд...")
+    delay = random.randint(3600, 7200)  # Интервал от 1 до 2 часов
+    print(f"Ожидание {delay} секунд...")
     time.sleep(delay)
 
 if __name__ == "__main__":
