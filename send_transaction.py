@@ -57,6 +57,7 @@ def main():
     transaction = get_random_trc20_transaction(contract_address, TRONGRID_API_KEY)
     
     if transaction:
+        # Преобразуем данные транзакции
         amount = int(transaction['raw_data']['contract'][0]['parameter']['value']['amount']) / 10**6
         tx_hash = transaction['txID']
         timestamp = transaction['block_timestamp'] // 1000
@@ -75,4 +76,18 @@ def main():
             f"🕔 Время: {date_time}"
         )
 
-        response = send_message(TELE
+        response = send_message(TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID, message)
+
+        if response and response.status_code == 200:
+            print("Message sent successfully.")
+        else:
+            print("Failed to send message.")
+    else:
+        print(f"No transactions found for {network}.")
+    
+    delay = random.randint(3600, 7200)  # Delay between 1 and 2 hours
+    print(f"Sleeping for {delay} seconds...")
+    time.sleep(delay)
+
+if __name__ == "__main__":
+    main()
