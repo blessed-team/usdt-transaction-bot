@@ -3,6 +3,7 @@ import random
 from datetime import datetime
 import pytz
 import time
+import math
 
 # Ваши API ключи и токены
 ETHERSCAN_API_KEY = '3JTRMXERPSTG1AY9AV1ZYD1WGRHZNEU3VI'  # Etherscan API ключ (для ERC20)
@@ -20,7 +21,7 @@ CONTRACT_ADDRESSES = {
 }
 
 def get_random_usdt_transaction(api_key, contract_address, network):
-    url = f"https://api.{network}.scan.com/api"
+    url = f"https://api.{network}.com/api"
 
     params = {
         "module": "account",
@@ -76,7 +77,9 @@ def main():
     transaction = get_random_usdt_transaction(api_key, contract_address, network)
 
     if transaction:
-        amount = int(transaction['value']) / 10**18  # BEP20 использует 18 десятичных знаков
+        # Обработка и округление данных
+        value = int(transaction['value']) / 10**18  # BEP20 использует 18 десятичных знаков
+        amount = math.floor(value * 100) / 100  # Округление до двух знаков после запятой и вниз
         tx_hash = transaction['hash']
         timestamp = int(transaction['timeStamp'])
 
