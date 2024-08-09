@@ -3,6 +3,7 @@ import random
 from datetime import datetime
 import pytz
 import time
+import binascii
 
 # Конфигурация
 TELEGRAM_BOT_TOKEN = '6482784614:AAEgqlW2JhisaGyo26WYVytrgl-8F-Nwlmk'  # Telegram Bot Token
@@ -11,6 +12,9 @@ TRONGRID_API_KEY = '175a5b7f-e2c2-4a3a-9bd9-bf2041feb02c'  # TronGrid API Key
 TRC20_CONTRACT_ADDRESS = 'TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t'  # USDT TRC20 Contract Address
 
 NAMES = ["Invoice", "Alex0z", "CPA-Master", "0x27ox", "Hawk", "Mark", "Rick Owens"]
+
+def hex_to_dec(hex_str):
+    return int(hex_str, 16)
 
 def get_random_trc20_transaction(contract_address, api_key):
     url = f"https://api.trongrid.io/v1/contracts/{contract_address}/transactions"
@@ -46,6 +50,15 @@ def send_message(token, chat_id, message):
 def format_amount(amount):
     return f"{amount:.2f}"
 
+def extract_amount_from_data(data):
+    # Пример декодирования данных
+    data = data[10:]  # Удаляем первые 10 символов, они не содержат сумму
+    decoded_data = binascii.unhexlify(data)
+    
+    # Сумма обычно в 32 байтах (64 символа в hex)
+    amount_hex = decoded_data[64:128]  # Зависит от структуры данных, это только пример
+    return hex_to_dec(amount_hex) / 10**6
+
 def main():
     print("Starting the script...")
     
@@ -61,13 +74,17 @@ def main():
 
         try:
             # Преобразуем данные транзакции
-            amount = int(transaction['raw_data']['contract'][0]['parameter']['value']['amount']) / 10**6
+            data = transaction['raw_data']['contract'][0]['parameter']['value']['data']
+            amount = extract_amount_from_data(data)
         except KeyError as e:
             print(f"KeyError: {e} - The data structure might have changed.")
             return
+        except Exception as e:
+            print(f"Error extracting amount: {e}")
+            return
 
         tx_hash = transaction['txID']
-        timestamp = transaction['block_timestamp'] // 1000
+        timestamp = int(transaction['block_timestamp']) // 1000
         date_time = datetime.fromtimestamp(timestamp, pytz.timezone('Europe/Berlin')).strftime('%H:%M:%S %d-%m-%Y')
 
         # Выбор имени и расчет доли воркера
