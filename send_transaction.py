@@ -144,7 +144,7 @@ def main():
 
         # Формирование сообщения
         message = (
-            f"💲 Профит у: {profit_name}\n"
+            f"💲 Профит у: <b>{profit_name}</b>\n"
             f"┠ Сумма заноса: <b>{rounded_amount:.2f}</b> USDT <i>({network_choice})</i>\n"
             f"┖ Доля воркера: <b>{worker_share:.2f}</b> USDT <i>({network_choice})</i>\n\n"
             
