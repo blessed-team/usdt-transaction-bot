@@ -3,34 +3,52 @@ import random
 from datetime import datetime
 import pytz
 import time
-import binascii
 
-# Конфигурация
+# Ваши API ключи и токены
+ETHERSCAN_API_KEY = '3JTRMXERPSTG1AY9AV1ZYD1WGRHZNEU3VI'  # Etherscan API ключ (для ERC20)
+BSC_API_KEY = '7C2J1YVTVAAER9TSDZHAC6WK8Z3Y5B8ABI'  # BscScan API ключ (для BEP20)
 TELEGRAM_BOT_TOKEN = '6482784614:AAEgqlW2JhisaGyo26WYVytrgl-8F-Nwlmk'  # Telegram Bot Token
 TELEGRAM_CHAT_ID = '-1002133823734'  # Telegram Chat ID
-TRONGRID_API_KEY = '175a5b7f-e2c2-4a3a-9bd9-bf2041feb02c'  # TronGrid API Key
-TRC20_CONTRACT_ADDRESS = 'TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t'  # USDT TRC20 Contract Address
 
+# Названия для профита
 NAMES = ["Invoice", "Alex0z", "CPA-Master", "0x27ox", "Hawk", "Mark", "Rick Owens"]
 
-def hex_to_dec(hex_str):
-    return int(hex_str, 16)
+# Адреса контрактов
+CONTRACT_ADDRESSES = {
+    "ERC20": "0xdac17f958d2ee523a2206206994597c13d831ec7",  # USDT ERC20
+    "BEP20": "0x55d398326f99059ff775485246999027b3197955"   # USDT BEP20
+}
 
-def get_random_trc20_transaction(contract_address, api_key):
-    url = f"https://api.trongrid.io/v1/contracts/{contract_address}/transactions"
-    headers = {
-        'Authorization': f'Bearer {api_key}'
+def get_random_usdt_transaction(api_key, contract_address, network):
+    url = f"https://api.{network}.scan.com/api"
+
+    params = {
+        "module": "account",
+        "action": "tokentx",
+        "contractaddress": contract_address,
+        "startblock": 0,
+        "endblock": 99999999,
+        "sort": "desc",
+        "page": 1,
+        "offset": 100,
+        "apikey": api_key
     }
-    response = requests.get(url, headers=headers)
-    if response.status_code == 200:
-        transactions = response.json().get('data', [])
+
+    try:
+        print(f"Fetching transactions from {network}...")
+        response = requests.get(url, params=params)
+        response.raise_for_status()
+        transactions = response.json().get('result', [])
+        print(f"Found {len(transactions)} transactions.")
+
         if transactions:
             return random.choice(transactions)
         else:
-            print("No transactions found for TRC20.")
+            print(f"No transactions found for {network}.")
             return None
-    else:
-        print("Failed to retrieve TRC20 transactions:", response.status_code, response.text)
+
+    except requests.RequestException as e:
+        print(f"Error fetching transactions: {e}")
         return None
 
 def send_message(token, chat_id, message):
@@ -38,64 +56,44 @@ def send_message(token, chat_id, message):
     data = {"chat_id": chat_id, "text": message, "parse_mode": "HTML"}
     
     try:
+        print("Sending message to Telegram...")
         response = requests.post(url, data=data)
         response.raise_for_status()
-        print(f"Message sent to Telegram: {response.status_code}")
-        print(f"Response: {response.json()}")
+        print(f"Message sent: {response.status_code}")
         return response
     except requests.RequestException as e:
-        print(f"Failed to send message to Telegram: {e}")
+        print(f"Error sending message: {e}")
         return None
-
-def format_amount(amount):
-    return f"{amount:.2f}"
-
-def extract_amount_from_data(data):
-    # Пример декодирования данных
-    data = data[10:]  # Удаляем первые 10 символов, они не содержат сумму
-    decoded_data = binascii.unhexlify(data)
-    
-    # Сумма обычно в 32 байтах (64 символа в hex)
-    amount_hex = decoded_data[64:128]  # Зависит от структуры данных, это только пример
-    return hex_to_dec(amount_hex) / 10**6
 
 def main():
     print("Starting the script...")
     
-    contract_address = TRC20_CONTRACT_ADDRESS
-    network = 'TRC20'
+    # Выбор случайной сети
+    network = "bscscan"  # Используем BSC для BEP20
+    api_key = BSC_API_KEY
+    contract_address = CONTRACT_ADDRESSES["BEP20"]
+    
+    transaction = get_random_usdt_transaction(api_key, contract_address, network)
 
-    print(f"Fetching transactions from {network}...")
-    
-    transaction = get_random_trc20_transaction(contract_address, TRONGRID_API_KEY)
-    
     if transaction:
-        print("Transaction data:", transaction)  # Debugging line to see the transaction data structure
+        amount = int(transaction['value']) / 10**18  # BEP20 использует 18 десятичных знаков
+        tx_hash = transaction['hash']
+        timestamp = int(transaction['timeStamp'])
 
-        try:
-            # Преобразуем данные транзакции
-            data = transaction['raw_data']['contract'][0]['parameter']['value']['data']
-            amount = extract_amount_from_data(data)
-        except KeyError as e:
-            print(f"KeyError: {e} - The data structure might have changed.")
-            return
-        except Exception as e:
-            print(f"Error extracting amount: {e}")
-            return
+        # Форматирование времени
+        europe_zone = pytz.timezone('Europe/Berlin')
+        date_time = datetime.fromtimestamp(timestamp, europe_zone).strftime('%H:%M:%S %d-%m-%Y')
 
-        tx_hash = transaction['txID']
-        timestamp = int(transaction['block_timestamp']) // 1000
-        date_time = datetime.fromtimestamp(timestamp, pytz.timezone('Europe/Berlin')).strftime('%H:%M:%S %d-%m-%Y')
-
-        # Выбор имени и расчет доли воркера
+        # Выбор случайного имени
         profit_name = random.choice(NAMES)
         worker_share = amount / 2
 
         # Формирование сообщения
         message = (
-            f"🥑 Профит у: {profit_name}\n"
-            f"┠ Сумма заноса: <b>{format_amount(amount)} USDT</b> <i>{network}</i>\n"
-            f"┖ Доля воркера: <b>{format_amount(worker_share)} USDT</b> <i>{network}</i>\n\n"
+            f"💲 Профит у: <b>{profit_name}</b>\n"
+            f"┠ Сумма заноса: <b>{amount:.2f}</b> USDT <i>BEP20</i>\n"
+            f"┖ Доля воркера: <b>{worker_share:.2f}</b> USDT <i>BEP20</i>\n\n"
+            
             f"🧬 Hash: <code>{tx_hash}</code>\n"
             f"🕔 Время: {date_time}"
         )
@@ -107,9 +105,9 @@ def main():
         else:
             print("Failed to send message.")
     else:
-        print(f"No transactions found for {network}.")
-    
-    delay = random.randint(3600, 7200)  # Delay between 1 and 2 hours
+        print("No transaction data found.")
+
+    delay = random.randint(30, 60)
     print(f"Sleeping for {delay} seconds...")
     time.sleep(delay)
 
