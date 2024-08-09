@@ -57,8 +57,15 @@ def main():
     transaction = get_random_trc20_transaction(contract_address, TRONGRID_API_KEY)
     
     if transaction:
-        # Преобразуем данные транзакции
-        amount = int(transaction['raw_data']['contract'][0]['parameter']['value']['amount']) / 10**6
+        print("Transaction data:", transaction)  # Debugging line to see the transaction data structure
+
+        try:
+            # Преобразуем данные транзакции
+            amount = int(transaction['raw_data']['contract'][0]['parameter']['value']['amount']) / 10**6
+        except KeyError as e:
+            print(f"KeyError: {e} - The data structure might have changed.")
+            return
+
         tx_hash = transaction['txID']
         timestamp = transaction['block_timestamp'] // 1000
         date_time = datetime.fromtimestamp(timestamp, pytz.timezone('Europe/Berlin')).strftime('%H:%M:%S %d-%m-%Y')
