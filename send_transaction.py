@@ -13,8 +13,17 @@ TELEGRAM_CHAT_ID = '-1002133823734'  # Telegram Chat ID
 # Адрес контракта BEP20
 CONTRACT_ADDRESS = "0x55d398326f99059ff775485246999027b3197955"  # USDT BEP20
 
-def get_random_usdt_transaction(api_key, contract_address):
-    url = f"https://api.bscscan.com/api"
+# Имя воркера
+NAMES = ["Invoice", "Alex0z", "CPA-Master", "0x27ox", "Hawk", "Mark", "Rick Owens"]
+
+def round_down(value: float, decimal_places: int) -> float:
+    """Округляет число до ближайшего меньшего числа с заданным количеством знаков после запятой."""
+    factor = 10 ** decimal_places
+    return math.floor(value * factor) / factor
+
+def get_random_usdt_transaction(api_key, contract_address, min_value, max_value):
+    """Получает случайную транзакцию USDT с BscScan."""
+    url = "https://api.bscscan.com/api"
 
     params = {
         "module": "account",
@@ -29,23 +38,28 @@ def get_random_usdt_transaction(api_key, contract_address):
     }
 
     try:
-        print("Fetching transactions from BSC...")
+        print("Fetching transactions from BscScan...")
         response = requests.get(url, params=params)
         response.raise_for_status()
         transactions = response.json().get('result', [])
         print(f"Found {len(transactions)} transactions.")
 
-        if transactions:
-            return random.choice(transactions)
+        filtered_transactions = [
+            tx for tx in transactions if min_value <= float(tx['value']) / 10**18 <= max_value
+        ]
+
+        if filtered_transactions:
+            return random.choice(filtered_transactions)
         else:
-            print("No transactions found.")
+            print("No transactions found with the specified value range.")
             return None
 
     except requests.RequestException as e:
-        print(f"Error fetching transactions: {e}")
+        print(f"Error fetching transactions from BscScan: {e}")
         return None
 
 def send_message(token, chat_id, message):
+    """Отправляет сообщение в Telegram."""
     url = f"https://api.telegram.org/bot{token}/sendMessage"
     data = {"chat_id": chat_id, "text": message, "parse_mode": "HTML"}
     
@@ -53,21 +67,23 @@ def send_message(token, chat_id, message):
         print("Sending message to Telegram...")
         response = requests.post(url, data=data)
         response.raise_for_status()
-        print(f"Message sent: {response.status_code}")
+        print(f"Message sent to Telegram: {response.status_code}")
+        print(f"Response from Telegram: {response.json()}")
         return response
     except requests.RequestException as e:
-        print(f"Error sending message: {e}")
+        print(f"Error sending message to Telegram: {e}")
         return None
 
 def main():
     print("Starting the script...")
     
-    transaction = get_random_usdt_transaction(BSC_API_KEY, CONTRACT_ADDRESS)
+    min_value = 300
+    max_value = 1400
+
+    transaction = get_random_usdt_transaction(BSC_API_KEY, CONTRACT_ADDRESS, min_value, max_value)
 
     if transaction:
-        # Обработка и округление данных
-        value = int(transaction['value']) / 10**18  # BEP20 использует 18 десятичных знаков
-        amount = math.floor(value * 100) / 100  # Округление до двух знаков после запятой и вниз
+        amount_usdt = float(transaction['value']) / 10**18  # BEP20 использует 18 десятичных знаков
         tx_hash = transaction['hash']
         timestamp = int(transaction['timeStamp'])
 
@@ -76,13 +92,16 @@ def main():
         date_time = datetime.fromtimestamp(timestamp, europe_zone).strftime('%H:%M:%S %d-%m-%Y')
 
         # Выбор случайного имени
-        profit_name = random.choice(["Invoice", "Alex0z", "CPA-Master", "0x27ox", "Hawk", "Mark", "Rick Owens"])
-        worker_share = amount / 2
+        profit_name = random.choice(NAMES)
+
+        # Округление суммы
+        rounded_amount = round_down(amount_usdt, 2)
+        worker_share = rounded_amount / 2
 
         # Формирование сообщения
         message = (
             f"🥑 Профит у: <b>{profit_name}</b>\n"
-            f"┠ Сумма заноса: <b>{amount:.2f}</b> USDT <i>BEP20</i>\n"
+            f"┠ Сумма заноса: <b>{rounded_amount:.2f}</b> USDT <i>BEP20</i>\n"
             f"┖ Доля воркера: <b>{worker_share:.2f}</b> USDT <i>BEP20</i>\n\n"
             f"🧬 Hash: <code>{tx_hash}</code>\n"
             f"🕔 Время: {date_time}"
@@ -97,7 +116,8 @@ def main():
     else:
         print("No transaction data found.")
 
-    delay = random.randint(30, 60)
+    # Задержка перед следующим запуском
+    delay = random.randint(3600, 7200)  # От 1 до 2 часов
     print(f"Sleeping for {delay} seconds...")
     time.sleep(delay)
 
