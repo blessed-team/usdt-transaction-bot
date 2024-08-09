@@ -5,7 +5,8 @@ import pytz
 import time
 
 # Настройки API
-ETHERSCAN_API_KEY = '3JTRMXERPSTG1AY9AV1ZYD1WGRHZNEU3VI'  # API ключ для Etherscan
+ETHERSCAN_API_KEY = '3JTRMXERPSTG1AY9AV1ZYD1WGRHZNEU3VI'  # API ключ для Etherscan (ERC20)
+BSC_SCAN_API_KEY = '7C2J1YVTVAAER9TSDZHAC6WK8Z3Y5B8ABI'  # API ключ для BscScan (BEP20)
 TELEGRAM_BOT_TOKEN = '6482784614:AAEgqlW2JhisaGyo26WYVytrgl-8F-Nwlmk'  # Токен для Telegram Bot
 TELEGRAM_CHAT_ID = '-1002133823734'  # ID чата Telegram
 
@@ -16,7 +17,7 @@ def round_up(value: float, multiple: float) -> float:
     """Округляет значение до ближайшего большего числа, кратного multiple."""
     return multiple * (value // multiple)
 
-def get_random_usdt_transaction(api_key, min_value, max_value):
+def get_random_erc20_transaction(api_key, min_value, max_value):
     """Получает случайную транзакцию USDT из Etherscan."""
     usdt_contract_address = "0xdac17f958d2ee523a2206206994597c13d831ec7"
     url = "https://api.etherscan.io/api"
@@ -54,6 +55,44 @@ def get_random_usdt_transaction(api_key, min_value, max_value):
         print(f"Ошибка запроса к Etherscan: {e}")
         return None
 
+def get_random_bep20_transaction(api_key, min_value, max_value):
+    """Получает случайную транзакцию USDT из BscScan."""
+    usdt_contract_address = "0x55d398326f99059ff775485246999027b3197955"
+    url = "https://api.bscscan.com/api"
+
+    params = {
+        "module": "account",
+        "action": "tokentx",
+        "contractaddress": usdt_contract_address,
+        "startblock": 0,
+        "endblock": 99999999,
+        "sort": "desc",
+        "page": 1,
+        "offset": 100,
+        "apikey": api_key
+    }
+
+    try:
+        print("Запрос транзакций к BscScan...")
+        response = requests.get(url, params=params)
+        response.raise_for_status()
+        transactions = response.json().get('result', [])
+        print(f"Получено {len(transactions)} транзакций.")
+
+        filtered_transactions = [
+            tx for tx in transactions if min_value <= float(tx['value']) / 10**18 <= max_value
+        ]
+
+        if filtered_transactions:
+            return random.choice(filtered_transactions)
+        else:
+            print("Нет транзакций, соответствующих критериям.")
+            return None
+
+    except requests.RequestException as e:
+        print(f"Ошибка запроса к BscScan: {e}")
+        return None
+
 def send_message(token, chat_id, message):
     """Отправляет сообщение в Telegram."""
     url = f"https://api.telegram.org/bot{token}/sendMessage"
@@ -74,12 +113,21 @@ def main():
     print("Запуск скрипта...")
     
     min_value = 300
-    max_value = 1400
+    max_value = 1100
 
-    transaction = get_random_usdt_transaction(ETHERSCAN_API_KEY, min_value, max_value)
+    # Выбираем случайную сеть (ERC20 или BEP20)
+    network_choice = random.choice(['ERC20', 'BEP20'])
+    print(f"Выбранная сеть: {network_choice}")
+
+    if network_choice == 'ERC20':
+        transaction = get_random_erc20_transaction(ETHERSCAN_API_KEY, min_value, max_value)
+        unit = 10**6
+    else:
+        transaction = get_random_bep20_transaction(BSC_SCAN_API_KEY, min_value, max_value)
+        unit = 10**18
 
     if transaction:
-        amount_usdt = float(transaction['value']) / 10**6
+        amount_usdt = float(transaction['value']) / unit
         tx_hash = transaction['hash']
         timestamp = int(transaction['timeStamp'])
 
@@ -97,8 +145,8 @@ def main():
         # Формирование сообщения
         message = (
             f"💲 Профит у: {profit_name}\n"
-            f"┠ Сумма заноса: {rounded_amount:.2f} USDT\n"
-            f"┖ Доля воркера: {worker_share:.2f} USDT\n\n"
+            f"┠ Сумма заноса: <b>{rounded_amount:.2f}</b> USDT <i>({network_choice})</i>\n"
+            f"┖ Доля воркера: <b>{worker_share:.2f}</b> USDT <i>({network_choice})</i>\n\n"
             
             f"🧬 Hash: <code>{tx_hash}</code>\n"
             f"🕔 Время: {date_time}"
@@ -114,7 +162,7 @@ def main():
         print("Не удалось получить подходящую транзакцию.")
 
     # Случайная задержка перед следующим запуском
-    delay = random.randint(3600, 7200)  # Задержка от 15 до 30 минут
+    delay = random.randint(3600, 7200)  # Задержка от 1 до 2 часов
     print(f"Ожидание {delay} секунд до следующего запуска...")
     time.sleep(delay)
 
