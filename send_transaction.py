@@ -18,7 +18,7 @@ TRC20_CONTRACT_ADDRESS = "TF9i9VEzaayhog5EmGuq4hhYZnnDtodta3"
 # Список имён
 NAMES = ["Invoice", "Alex0z", "CPA-Master", "0x27ox", "Hawk", "Mark", "Rick Owens"]
 
-def get_random_usdt_transaction(api_key, contract_address, network):
+def get_random_usdt_transaction(api_key, contract_address, network, min_value, max_value):
     if network == "ERC20":
         url = "https://api.etherscan.io/api"
         params = {
@@ -91,7 +91,7 @@ def main():
 
     network = random.choice(["ERC20", "TRC20"])
     contract_address = ERC20_CONTRACT_ADDRESS if network == "ERC20" else TRC20_CONTRACT_ADDRESS
-    transaction = get_random_usdt_transaction(ETHERSCAN_API_KEY, contract_address, network)
+    transaction = get_random_usdt_transaction(ETHERSCAN_API_KEY, contract_address, network, min_value, max_value)
 
     if transaction:
         amount_usdt = float(transaction['value']) / 10**6 if network == "ERC20" else float(transaction['amount']) / 10**6
@@ -109,11 +109,11 @@ def main():
 
         # Формирование сообщения
         message = (
-            f"<b>Профит у:</b> {profit_name}\n"
-            f"<b>Сумма заноса:</b> <i>{amount_usdt:.2f} USDT ({network})</i>\n"
-            f"<b>Доля воркера:</b> <i>{worker_share:.2f} USDT ({network})</i>\n\n"
-            f"<b>Hash:</b> <code>{tx_hash}</code>\n"
-            f"<b>Время:</b> {date_time}"
+            f"🥑 Профит у: {profit_name}\n"
+            f"┠ Сумма заноса: <b>{amount_usdt:.2f} USDT {network}</b>\n"
+            f"┖ Доля воркера: <b>{worker_share:.2f} USDT ({network})</b>\n\n"
+            f"🧬 Hash: <code>{tx_hash}</code>\n"
+            f"🕔 Время: {date_time}"
         )
 
         response = send_message(TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID, message)
