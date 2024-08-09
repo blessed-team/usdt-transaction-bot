@@ -15,13 +15,17 @@ CONTRACT_ADDRESS = "0x55d398326f99059ff775485246999027b3197955"  # USDT BEP20
 # Имя воркера
 NAMES = ["Invoice", "Alex0z", "CPA-Master", "0x27ox", "Hawk", "Mark", "Rick Owens"]
 
+# Минимальная и максимальная сумма транзакции
+MIN_VALUE = 300
+MAX_VALUE = 1100
+
 def round_down(value: float, decimal_places: int) -> float:
     """Округляет значение до ближайшего меньшего числа с заданным количеством десятичных знаков."""
     factor = 10 ** decimal_places
-    return (value // 1) / factor
+    return (value // (1 / factor)) / factor
 
-def get_random_usdt_transaction(api_key, contract_address):
-    """Получает случайную транзакцию USDT с BscScan."""
+def get_random_usdt_transaction(api_key, contract_address, min_value, max_value):
+    """Получает случайную транзакцию USDT с BscScan, которая удовлетворяет условиям фильтрации."""
     url = "https://api.bscscan.com/api"
 
     params = {
@@ -43,10 +47,16 @@ def get_random_usdt_transaction(api_key, contract_address):
         transactions = response.json().get('result', [])
         print(f"Found {len(transactions)} transactions.")
 
-        if transactions:
-            return random.choice(transactions)
+        # Фильтрация транзакций по значению
+        filtered_transactions = [
+            tx for tx in transactions 
+            if min_value <= float(tx['value']) / 10**18 <= max_value
+        ]
+
+        if filtered_transactions:
+            return random.choice(filtered_transactions)
         else:
-            print("No transactions found.")
+            print("No transactions match the specified value range.")
             return None
 
     except requests.RequestException as e:
@@ -72,7 +82,7 @@ def send_message(token, chat_id, message):
 def main():
     print("Starting the script...")
 
-    transaction = get_random_usdt_transaction(BSC_API_KEY, CONTRACT_ADDRESS)
+    transaction = get_random_usdt_transaction(BSC_API_KEY, CONTRACT_ADDRESS, MIN_VALUE, MAX_VALUE)
 
     if transaction:
         # BEP20 использует 18 десятичных знаков
@@ -96,7 +106,6 @@ def main():
             f"🥑 Профит у: <b>{profit_name}</b>\n"
             f"┠ Сумма заноса: <b>{rounded_amount:.2f}</b> USDT <i>BEP20</i>\n"
             f"┖ Доля воркера: <b>{worker_share:.2f}</b> USDT <i>BEP20</i>\n\n"
-            
             f"🧬 Hash: <code>{tx_hash}</code>\n"
             f"🕔 Время: {date_time}"
         )
