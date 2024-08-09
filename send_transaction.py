@@ -3,7 +3,6 @@ import random
 from datetime import datetime
 import pytz
 import time
-import math
 
 # Ваши API ключи и токены
 BSC_API_KEY = '7C2J1YVTVAAER9TSDZHAC6WK8Z3Y5B8ABI'  # BscScan API ключ (для BEP20)
@@ -16,12 +15,7 @@ CONTRACT_ADDRESS = "0x55d398326f99059ff775485246999027b3197955"  # USDT BEP20
 # Имя воркера
 NAMES = ["Invoice", "Alex0z", "CPA-Master", "0x27ox", "Hawk", "Mark", "Rick Owens"]
 
-def round_down(value: float, decimal_places: int) -> float:
-    """Округляет число до ближайшего меньшего числа с заданным количеством знаков после запятой."""
-    factor = 10 ** decimal_places
-    return math.floor(value * factor) / factor
-
-def get_random_usdt_transaction(api_key, contract_address, min_value, max_value):
+def get_random_usdt_transaction(api_key, contract_address):
     """Получает случайную транзакцию USDT с BscScan."""
     url = "https://api.bscscan.com/api"
 
@@ -44,14 +38,10 @@ def get_random_usdt_transaction(api_key, contract_address, min_value, max_value)
         transactions = response.json().get('result', [])
         print(f"Found {len(transactions)} transactions.")
 
-        filtered_transactions = [
-            tx for tx in transactions if min_value <= float(tx['value']) / 10**18 <= max_value
-        ]
-
-        if filtered_transactions:
-            return random.choice(filtered_transactions)
+        if transactions:
+            return random.choice(transactions)
         else:
-            print("No transactions found with the specified value range.")
+            print("No transactions found.")
             return None
 
     except requests.RequestException as e:
@@ -76,11 +66,8 @@ def send_message(token, chat_id, message):
 
 def main():
     print("Starting the script...")
-    
-    min_value = 300
-    max_value = 1400
 
-    transaction = get_random_usdt_transaction(BSC_API_KEY, CONTRACT_ADDRESS, min_value, max_value)
+    transaction = get_random_usdt_transaction(BSC_API_KEY, CONTRACT_ADDRESS)
 
     if transaction:
         amount_usdt = float(transaction['value']) / 10**18  # BEP20 использует 18 десятичных знаков
@@ -94,15 +81,11 @@ def main():
         # Выбор случайного имени
         profit_name = random.choice(NAMES)
 
-        # Округление суммы
-        rounded_amount = round_down(amount_usdt, 2)
-        worker_share = rounded_amount / 2
-
         # Формирование сообщения
         message = (
             f"🥑 Профит у: <b>{profit_name}</b>\n"
-            f"┠ Сумма заноса: <b>{rounded_amount:.2f}</b> USDT <i>BEP20</i>\n"
-            f"┖ Доля воркера: <b>{worker_share:.2f}</b> USDT <i>BEP20</i>\n\n"
+            f"┠ Сумма заноса: <b>{amount_usdt:.2f}</b> USDT <i>BEP20</i>\n"
+            f"┖ Доля воркера: <b>{amount_usdt / 2:.2f}</b> USDT <i>BEP20</i>\n\n"
             f"🧬 Hash: <code>{tx_hash}</code>\n"
             f"🕔 Время: {date_time}"
         )
