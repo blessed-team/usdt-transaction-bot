@@ -149,6 +149,7 @@ def main():
             f"┖ Доля воркера: <b>{worker_share:.2f}</b> USDT <i>({network_choice})</i>\n\n"
             
             f"🧬 Hash: <code>{tx_hash}</code>\n"
+            
             f"🕔 Время: {date_time}"
         )
 
