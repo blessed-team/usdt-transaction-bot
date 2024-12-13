@@ -11,7 +11,7 @@ TELEGRAM_BOT_TOKEN = '6482784614:AAEgqlW2JhisaGyo26WYVytrgl-8F-Nwlmk'  # Ток�
 TELEGRAM_CHAT_ID = '-1002133823734'  # ID чата Telegram
 
 # Список имен
-NAMES = ["Invoice", "Alex0z", "CPA-Master", "0x27ox", "Hawk", "Mark", "Rick Owens"]
+NAMES = ["Invoice", "Alex0z", "CPA-Master", "0x27ox", "Hawk", "Mark", "Rick Owens", "T1m 24/7", "Blessed", "DIOR-h8ter", "DB-legacy"]
 
 def round_up(value: float, multiple: float) -> float:
     """Округляет значение до ближайшего большего числа, кратного multiple."""
