@@ -192,87 +192,95 @@ def get_bep20_transaction():
 
 def get_trc20_transaction():
 
+    contract = "TXLAQ63Xg1NAzckPwKHvzw7CSEmLMEqcdj"
 
-    # последние TRC20 переводы USDT
-    url = "https://api.trongrid.io/v1/assets/TRX/transactions"
-
+    url = (
+        f"https://api.trongrid.io/v1/contracts/"
+        f"{contract}/events"
+    )
 
     headers = {
-
         "TRON-PRO-API-KEY": TRONGRID_API_KEY
-
     }
 
+    params = {
+        "event_name": "Transfer",
+        "limit": 200,
+        "order_by": "block_timestamp,desc"
+    }
 
     try:
 
         print("TRON запрос...")
 
-
-        # получаем последние транзакции USDT
-        url = (
-            "https://api.trongrid.io/v1/accounts/"
-            "TXLAQ63Xg1NAzckPwKHvzw7CSEmLMEqcdj/"
-            "transactions/trc20"
-        )
-
-
         r = requests.get(
             url,
             headers=headers,
+            params=params,
             timeout=30
         )
 
-
         data = r.json()
 
+        print(data)
 
         if "data" not in data:
-
-            print(data)
             return None
-
 
 
         result = []
 
 
-
         for tx in data["data"]:
 
+            try:
 
-            if tx["token_info"]["symbol"] != "USDT":
+                amount = float(
+                    tx["result"]["value"]
+                ) / 10**6
+
+
+                if MIN_VALUE <= amount <= MAX_VALUE:
+
+                    result.append({
+
+                        "network": "TRC20",
+                        "amount": amount,
+                        "hash": tx["transaction_id"],
+                        "time": int(tx["block_timestamp"]) // 1000
+
+                    })
+
+
+            except Exception:
+
                 continue
 
 
-            amount = float(tx["value"]) / 10**6
+
+        print(
+            "Подходящих TRC20:",
+            len(result)
+        )
 
 
+        if result:
 
-            if MIN_VALUE <= amount <= MAX_VALUE:
-
-
-                result.append({
-
-                    "network": "TRC20",
-                    "amount": amount,
-                    "hash": tx["transaction_id"],
-                    "time": int(tx["block_timestamp"]) // 1000
-
-                })
+            return random.choice(result)
 
 
-
-        return random.choice(result) if result else None
+        return None
 
 
 
     except Exception as e:
 
-        print("TRC20 error:", e)
+        print(
+            "TRON error:",
+            e
+        )
 
         return None
-
 
 
 
