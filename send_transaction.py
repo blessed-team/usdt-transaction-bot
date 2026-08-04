@@ -7,8 +7,8 @@ import time
 # Настройки API
 ETHERSCAN_API_KEY = '3JTRMXERPSTG1AY9AV1ZYD1WGRHZNEU3VI'  # API ключ для Etherscan (ERC20)
 BSC_SCAN_API_KEY = '7C2J1YVTVAAER9TSDZHAC6WK8Z3Y5B8ABI'  # API ключ для BscScan (BEP20)
-TELEGRAM_BOT_TOKEN = '6482784614:AAEgqlW2JhisaGyo26WYVytrgl-8F-Nwlmk'  # Токен для Telegram Bot
-TELEGRAM_CHAT_ID = '-1002133823734'  # ID чата Telegram
+TELEGRAM_BOT_TOKEN = '8897185110:AAGZy5xqvOYe4QBslIGJLFezTU_VwZtwbiY'  # Токен для Telegram Bot
+TELEGRAM_CHAT_ID = '-1004439708770'  # ID чата Telegram
 
 # Список имен
 NAMES = ["Invoice", "Alex0z", "CPA-Master", "0x27ox", "Hawk", "Mark", "Rick Owens", "T1m 24/7", "Blessed", "DIOR-h8ter", "DB-legacy"]
