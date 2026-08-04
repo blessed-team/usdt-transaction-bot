@@ -192,12 +192,7 @@ def get_bep20_transaction():
 
 def get_trc20_transaction():
 
-    contract = "TXLAQ63Xg1NAzckPwKHvzw7CSEmLMEqcdj"
-
-    url = (
-        f"https://api.trongrid.io/v1/contracts/"
-        f"{contract}/events"
-    )
+    url = "https://api.trongrid.io/v1/contracts/TR7NHqjeKQxGTCi8q8zyF1Jp8p7p3W9qgX/events"
 
     headers = {
         "TRON-PRO-API-KEY": TRONGRID_API_KEY
@@ -213,22 +208,23 @@ def get_trc20_transaction():
 
         print("TRON запрос...")
 
-        r = requests.get(
+        response = requests.get(
             url,
             headers=headers,
             params=params,
             timeout=30
         )
 
-        data = r.json()
+        data = response.json()
 
         print(data)
+
 
         if "data" not in data:
             return None
 
 
-        result = []
+        transactions = []
 
 
         for tx in data["data"]:
@@ -236,13 +232,13 @@ def get_trc20_transaction():
             try:
 
                 amount = float(
-                    tx["result"]["value"]
+                    tx["result"]["0"]
                 ) / 10**6
 
 
                 if MIN_VALUE <= amount <= MAX_VALUE:
 
-                    result.append({
+                    transactions.append({
 
                         "network": "TRC20",
                         "amount": amount,
@@ -260,13 +256,13 @@ def get_trc20_transaction():
 
         print(
             "Подходящих TRC20:",
-            len(result)
+            len(transactions)
         )
 
 
-        if result:
+        if transactions:
 
-            return random.choice(result)
+            return random.choice(transactions)
 
 
         return None
@@ -281,7 +277,6 @@ def get_trc20_transaction():
         )
 
         return None
-
 
 
 
