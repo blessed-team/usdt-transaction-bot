@@ -110,13 +110,14 @@ def get_random_erc20_transaction(api_key, min_value, max_value):
 
 
 def get_random_bep20_transaction(api_key, min_value, max_value):
-    """Получает случайную BEP20 транзакцию USDT из BscScan."""
+    """Получает случайную BEP20 транзакцию USDT через Etherscan V2."""
 
     usdt_contract_address = "0x55d398326f99059ff775485246999027b3197955"
 
-    url = "https://api.bscscan.com/api"
+    url = "https://api.etherscan.io/v2/api"
 
     params = {
+        "chainid": 56,
         "module": "account",
         "action": "tokentx",
         "contractaddress": usdt_contract_address,
@@ -129,19 +130,21 @@ def get_random_bep20_transaction(api_key, min_value, max_value):
     }
 
     try:
-        print("Запрос транзакций к BscScan...")
+        print("Запрос транзакций к BSC через Etherscan V2...")
 
-        response = requests.get(url, params=params, timeout=30)
-        response.raise_for_status()
+        response = requests.get(
+            url,
+            params=params,
+            timeout=30
+        )
 
         data = response.json()
 
-        print("Ответ BscScan:")
+        print("Ответ BSC:")
         print(data)
 
         if not isinstance(data.get("result"), list):
             print("API вернул ошибку:")
-            print(data)
             return None
 
         transactions = data["result"]
@@ -160,7 +163,9 @@ def get_random_bep20_transaction(api_key, min_value, max_value):
             except (KeyError, ValueError, TypeError):
                 continue
 
-        print(f"Подходящих транзакций: {len(filtered_transactions)}")
+        print(
+            f"Подходящих транзакций: {len(filtered_transactions)}"
+        )
 
         if not filtered_transactions:
             return None
@@ -168,9 +173,8 @@ def get_random_bep20_transaction(api_key, min_value, max_value):
         return random.choice(filtered_transactions)
 
     except Exception as e:
-        print(f"Ошибка BscScan: {e}")
+        print(f"Ошибка BSC: {e}")
         return None
-
 
 def send_message(token, chat_id, message):
     """Отправка сообщения в Telegram."""
