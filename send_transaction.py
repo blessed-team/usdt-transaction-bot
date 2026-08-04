@@ -6,7 +6,7 @@ import time
 
 # Настройки API
 ETHERSCAN_API_KEY = "3JTRMXERPSTG1AY9AV1ZYD1WGRHZNEU3VI"
-BSC_SCAN_API_KEY = "3JTRMXERPSTG1AY9AV1ZYD1WGRHZNEU3VI"
+
 
 TELEGRAM_BOT_TOKEN = "8897185110:AAGZy5xqvOYe4QBslIGJLFezTU_VwZtwbiY"
 TELEGRAM_CHAT_ID = "-1004439708770"
@@ -109,73 +109,6 @@ def get_random_erc20_transaction(api_key, min_value, max_value):
         return None
 
 
-def get_random_bep20_transaction(api_key, min_value, max_value):
-    """Получает случайную BEP20 транзакцию USDT через Etherscan V2."""
-
-    usdt_contract_address = "0x55d398326f99059ff775485246999027b3197955"
-
-    url = "https://api.etherscan.io/v2/api"
-
-    params = {
-        "chainid": 56,
-        "module": "account",
-        "action": "tokentx",
-        "contractaddress": usdt_contract_address,
-        "startblock": 0,
-        "endblock": 99999999,
-        "sort": "desc",
-        "page": 1,
-        "offset": 100,
-        "apikey": api_key
-    }
-
-    try:
-        print("Запрос транзакций к BSC через Etherscan V2...")
-
-        response = requests.get(
-            url,
-            params=params,
-            timeout=30
-        )
-
-        data = response.json()
-
-        print("Ответ BSC:")
-        print(data)
-
-        if not isinstance(data.get("result"), list):
-            print("API вернул ошибку:")
-            return None
-
-        transactions = data["result"]
-
-        print(f"Получено {len(transactions)} транзакций.")
-
-        filtered_transactions = []
-
-        for tx in transactions:
-            try:
-                amount = float(tx["value"]) / 10**18
-
-                if min_value <= amount <= max_value:
-                    filtered_transactions.append(tx)
-
-            except (KeyError, ValueError, TypeError):
-                continue
-
-        print(
-            f"Подходящих транзакций: {len(filtered_transactions)}"
-        )
-
-        if not filtered_transactions:
-            return None
-
-        return random.choice(filtered_transactions)
-
-    except Exception as e:
-        print(f"Ошибка BSC: {e}")
-        return None
-
 def send_message(token, chat_id, message):
     """Отправка сообщения в Telegram."""
 
@@ -203,30 +136,17 @@ def send_message(token, chat_id, message):
         return None
 
 
-def main():
-    print("Запуск скрипта...")
+network_choice = "ERC20"
 
-    min_value = 300
-    max_value = 1100
+print(f"Выбранная сеть: {network_choice}")
 
-    network_choice = random.choice(["ERC20", "BEP20"])
+transaction = get_random_erc20_transaction(
+    ETHERSCAN_API_KEY,
+    min_value,
+    max_value
+)
 
-    print(f"Выбранная сеть: {network_choice}")
-
-    if network_choice == "ERC20":
-        transaction = get_random_erc20_transaction(
-            ETHERSCAN_API_KEY,
-            min_value,
-            max_value
-        )
-        unit = 10**6
-    else:
-        transaction = get_random_bep20_transaction(
-            BSC_SCAN_API_KEY,
-            min_value,
-            max_value
-        )
-        unit = 10**18
+unit = 10**6
 
     if not transaction:
         print("Не удалось получить подходящую транзакцию.")
