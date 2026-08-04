@@ -4,14 +4,23 @@ from datetime import datetime
 import pytz
 import time
 
-# Настройки API
+
+# ==========================
+# API KEYS
+# ==========================
+
 ETHERSCAN_API_KEY = "3JTRMXERPSTG1AY9AV1ZYD1WGRHZNEU3VI"
-BSC_SCAN_API_KEY = "3JTRMXERPSTG1AY9AV1ZYD1WGRHZNEU3VI"
+BSCSCAN_API_KEY = "3JTRMXERPSTG1AY9AV1ZYD1WGRHZNEU3VI"
+TRONGRID_API_KEY = "74d034f4-09db-47b6-af19-12bc8e0aae1b"
 
 TELEGRAM_BOT_TOKEN = "8897185110:AAGZy5xqvOYe4QBslIGJLFezTU_VwZtwbiY"
 TELEGRAM_CHAT_ID = "-1004439708770"
 
-# Список имен
+
+# ==========================
+# SETTINGS
+# ==========================
+
 NAMES = [
     "Invoice",
     "Alex0z",
@@ -27,233 +36,416 @@ NAMES = [
 ]
 
 
-def round_up(value: float, multiple: float) -> float:
+MIN_VALUE = 300
+MAX_VALUE = 1100
+
+
+# ==========================
+# HELPERS
+# ==========================
+
+def round_up(value, multiple):
     return multiple * (value // multiple)
 
 
-def get_random_erc20_transaction(api_key, min_value, max_value):
-    """Получает случайную ERC20 транзакцию USDT из Etherscan."""
 
-    usdt_contract_address = "0xdac17f958d2ee523a2206206994597c13d831ec7"
+# ==========================
+# ERC20 ETHEREUM
+# ==========================
+
+def get_erc20_transaction():
 
     url = "https://api.etherscan.io/api"
 
     params = {
         "module": "account",
         "action": "tokentx",
-        "contractaddress": usdt_contract_address,
+        "contractaddress": "0xdac17f958d2ee523a2206206994597c13d831ec7",
         "startblock": 0,
         "endblock": 99999999,
         "sort": "desc",
         "page": 1,
         "offset": 100,
-        "apikey": api_key
+        "apikey": ETHERSCAN_API_KEY
     }
 
+
     try:
-        print("Запрос транзакций к Etherscan...")
 
-        response = requests.get(url, params=params, timeout=30)
-        response.raise_for_status()
+        print("ETHEREUM запрос...")
 
-        data = response.json()
+        r = requests.get(url, params=params, timeout=30)
 
-        print("Ответ Etherscan:")
-        print(data)
+        data = r.json()
+
 
         if not isinstance(data.get("result"), list):
-            print("API вернул ошибку:")
             print(data)
             return None
 
-        transactions = data["result"]
 
-        print(f"Получено {len(transactions)} транзакций.")
+        result = []
 
-        filtered_transactions = []
 
-        for tx in transactions:
-            try:
-                amount = float(tx["value"]) / 10**6
+        for tx in data["result"]:
 
-                if min_value <= amount <= max_value:
-                    filtered_transactions.append(tx)
+            amount = float(tx["value"]) / 10**6
 
-            except (KeyError, ValueError, TypeError):
-                continue
+            if MIN_VALUE <= amount <= MAX_VALUE:
+                result.append({
 
-        print(f"Подходящих транзакций: {len(filtered_transactions)}")
+                    "network": "ERC20",
+                    "amount": amount,
+                    "hash": tx["hash"],
+                    "time": tx["timeStamp"]
 
-        if not filtered_transactions:
-            return None
+                })
 
-        return random.choice(filtered_transactions)
+
+        return random.choice(result) if result else None
+
 
     except Exception as e:
-        print(f"Ошибка Etherscan: {e}")
+
+        print("ERC20 error:", e)
         return None
 
 
-def get_random_bep20_transaction(api_key, min_value, max_value):
-    """Получает случайную BEP20 транзакцию USDT из BscScan."""
 
-    usdt_contract_address = "0x55d398326f99059ff775485246999027b3197955"
+
+# ==========================
+# BEP20 BSC
+# ==========================
+
+def get_bep20_transaction():
 
     url = "https://api.bscscan.com/api"
 
+
     params = {
+
         "module": "account",
         "action": "tokentx",
-        "contractaddress": usdt_contract_address,
+        "contractaddress": "0x55d398326f99059ff775485246999027b3197955",
         "startblock": 0,
         "endblock": 99999999,
         "sort": "desc",
         "page": 1,
         "offset": 100,
-        "apikey": api_key
+        "apikey": BSCSCAN_API_KEY
+
     }
 
+
     try:
-        print("Запрос транзакций к BscScan...")
 
-        response = requests.get(url, params=params, timeout=30)
-        response.raise_for_status()
+        print("BSC запрос...")
 
-        data = response.json()
 
-        print("Ответ BscScan:")
-        print(data)
+        r = requests.get(url, params=params, timeout=30)
+
+        data = r.json()
+
 
         if not isinstance(data.get("result"), list):
-            print("API вернул ошибку:")
             print(data)
             return None
 
-        transactions = data["result"]
 
-        print(f"Получено {len(transactions)} транзакций.")
+        result = []
 
-        filtered_transactions = []
 
-        for tx in transactions:
-            try:
-                amount = float(tx["value"]) / 10**18
+        for tx in data["result"]:
 
-                if min_value <= amount <= max_value:
-                    filtered_transactions.append(tx)
 
-            except (KeyError, ValueError, TypeError):
-                continue
+            amount = float(tx["value"]) / 10**18
 
-        print(f"Подходящих транзакций: {len(filtered_transactions)}")
 
-        if not filtered_transactions:
-            return None
+            if MIN_VALUE <= amount <= MAX_VALUE:
 
-        return random.choice(filtered_transactions)
+                result.append({
+
+                    "network": "BEP20",
+                    "amount": amount,
+                    "hash": tx["hash"],
+                    "time": tx["timeStamp"]
+
+                })
+
+
+        return random.choice(result) if result else None
+
+
 
     except Exception as e:
-        print(f"Ошибка BscScan: {e}")
+
+        print("BEP20 error:", e)
         return None
 
 
-def send_message(token, chat_id, message):
-    """Отправка сообщения в Telegram."""
 
-    url = f"https://api.telegram.org/bot{token}/sendMessage"
 
-    data = {
-        "chat_id": chat_id,
-        "text": message,
-        "parse_mode": "HTML"
+
+# ==========================
+# TRC20 TRON
+# ==========================
+
+def get_trc20_transaction():
+
+
+    # последние TRC20 переводы USDT
+    url = "https://api.trongrid.io/v1/assets/TRX/transactions"
+
+
+    headers = {
+
+        "TRON-PRO-API-KEY": TRONGRID_API_KEY
+
     }
 
+
     try:
-        print("Отправка сообщения в Telegram...")
 
-        response = requests.post(url, data=data, timeout=30)
-        response.raise_for_status()
+        print("TRON запрос...")
 
-        print(f"Статус Telegram: {response.status_code}")
-        print(response.json())
 
-        return response
+        # получаем последние транзакции USDT
+        url = (
+            "https://api.trongrid.io/v1/accounts/"
+            "TXLAQ63Xg1NAzckPwKHvzw7CSEmLMEqcdj/"
+            "transactions/trc20"
+        )
+
+
+        r = requests.get(
+            url,
+            headers=headers,
+            timeout=30
+        )
+
+
+        data = r.json()
+
+
+        if "data" not in data:
+
+            print(data)
+            return None
+
+
+
+        result = []
+
+
+
+        for tx in data["data"]:
+
+
+            if tx["token_info"]["symbol"] != "USDT":
+                continue
+
+
+            amount = float(tx["value"]) / 10**6
+
+
+
+            if MIN_VALUE <= amount <= MAX_VALUE:
+
+
+                result.append({
+
+                    "network": "TRC20",
+                    "amount": amount,
+                    "hash": tx["transaction_id"],
+                    "time": int(tx["block_timestamp"]) // 1000
+
+                })
+
+
+
+        return random.choice(result) if result else None
+
+
 
     except Exception as e:
-        print(f"Ошибка Telegram: {e}")
+
+        print("TRC20 error:", e)
+
         return None
+
+
+
+
+
+# ==========================
+# TELEGRAM
+# ==========================
+
+
+def send_message(message):
+
+
+    url = (
+        f"https://api.telegram.org/"
+        f"bot{TELEGRAM_BOT_TOKEN}/sendMessage"
+    )
+
+
+    data = {
+
+        "chat_id": TELEGRAM_CHAT_ID,
+        "text": message,
+        "parse_mode": "HTML"
+
+    }
+
+
+    try:
+
+        r = requests.post(
+            url,
+            data=data,
+            timeout=30
+        )
+
+
+        print(r.json())
+
+
+    except Exception as e:
+
+        print("Telegram error:", e)
+
+
+
+
+
+# ==========================
+# MAIN
+# ==========================
 
 
 def main():
-    print("Запуск скрипта...")
 
-    min_value = 300
-    max_value = 1100
 
-    network_choice = random.choice(["ERC20", "BEP20"])
+    print("Запуск...")
 
-    print(f"Выбранная сеть: {network_choice}")
 
-    if network_choice == "ERC20":
-        transaction = get_random_erc20_transaction(
-            ETHERSCAN_API_KEY,
-            min_value,
-            max_value
-        )
-        unit = 10**6
-    else:
-        transaction = get_random_bep20_transaction(
-            BSC_SCAN_API_KEY,
-            min_value,
-            max_value
-        )
-        unit = 10**18
-
-    if not transaction:
-        print("Не удалось получить подходящую транзакцию.")
-        return
-
-    amount_usdt = float(transaction["value"]) / unit
-    tx_hash = transaction["hash"]
-    timestamp = int(transaction["timeStamp"])
-
-    europe_zone = pytz.timezone("Europe/Berlin")
-
-    date_time = datetime.fromtimestamp(
-        timestamp,
-        europe_zone
-    ).strftime("%H:%M:%S %d-%m-%Y")
-
-    profit_name = random.choice(NAMES)
-
-    rounded_amount = round_up(amount_usdt, 10)
-    worker_share = rounded_amount / 2
-
-    message = (
-        f"💲 Профит у: <b>{profit_name}</b>\n"
-        f"┠ Сумма заноса: <b>{rounded_amount:.2f}</b> USDT <i>({network_choice})</i>\n"
-        f"┖ Доля воркера: <b>{worker_share:.2f}</b> USDT <i>({network_choice})</i>\n\n"
-        f"🧬 Hash: <code>{tx_hash}</code>\n"
-        f"🕔 Время: {date_time}"
+    network = random.choice(
+        [
+            "ERC20",
+            "BEP20",
+            "TRC20"
+        ]
     )
 
-    delay = random.randint(60, 900)
 
-    print(f"Ожидание {delay} секунд...")
+    print(
+        "Выбрана сеть:",
+        network
+    )
+
+
+
+    if network == "ERC20":
+
+        tx = get_erc20_transaction()
+
+
+    elif network == "BEP20":
+
+        tx = get_bep20_transaction()
+
+
+    else:
+
+        tx = get_trc20_transaction()
+
+
+
+    if not tx:
+
+        print(
+            "Подходящих транзакций нет"
+        )
+
+        return
+
+
+
+    amount = round_up(
+        tx["amount"],
+        10
+    )
+
+
+    worker = amount / 2
+
+
+
+    zone = pytz.timezone(
+        "Europe/Berlin"
+    )
+
+
+    date = datetime.fromtimestamp(
+        tx["time"],
+        zone
+    ).strftime(
+        "%H:%M:%S %d-%m-%Y"
+    )
+
+
+
+    name = random.choice(
+        NAMES
+    )
+
+
+
+    message = (
+
+        f"💲 Профит у: "
+        f"<b>{name}</b>\n"
+
+        f"┠ Сумма заноса: "
+        f"<b>{amount:.2f}</b> USDT "
+        f"<i>({tx['network']})</i>\n"
+
+        f"┖ Доля воркера: "
+        f"<b>{worker:.2f}</b> USDT "
+        f"<i>({tx['network']})</i>\n\n"
+
+        f"🧬 Hash:\n"
+        f"<code>{tx['hash']}</code>\n\n"
+
+        f"🕔 Время: {date}"
+
+    )
+
+
+
+    delay = random.randint(
+        60,
+        900
+    )
+
+
+    print(
+        f"Ждем {delay} секунд..."
+    )
+
 
     time.sleep(delay)
 
-    response = send_message(
-        TELEGRAM_BOT_TOKEN,
-        TELEGRAM_CHAT_ID,
+
+
+    send_message(
         message
     )
 
-    if response and response.status_code == 200:
-        print("Сообщение успешно отправлено.")
-    else:
-        print("Не удалось отправить сообщение.")
 
 
 if __name__ == "__main__":
+
     main()
