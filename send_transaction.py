@@ -32,13 +32,13 @@ def round_up(value: float, multiple: float) -> float:
 
 
 def get_random_erc20_transaction(api_key, min_value, max_value):
-    """Получает случайную ERC20 транзакцию USDT из Etherscan."""
 
     usdt_contract_address = "0xdac17f958d2ee523a2206206994597c13d831ec7"
 
-    url = "https://api.etherscan.io/api"
+    url = "https://api.etherscan.io/v2/api"
 
     params = {
+        "chainid": 1,
         "module": "account",
         "action": "tokentx",
         "contractaddress": usdt_contract_address,
@@ -51,46 +51,61 @@ def get_random_erc20_transaction(api_key, min_value, max_value):
     }
 
     try:
-        print("Запрос транзакций к Etherscan...")
 
-        response = requests.get(url, params=params, timeout=30)
-        response.raise_for_status()
+        print("Запрос транзакций к Etherscan V2...")
+
+        response = requests.get(
+            url,
+            params=params,
+            timeout=30
+        )
 
         data = response.json()
 
-        print("Ответ Etherscan:")
         print(data)
 
+
         if not isinstance(data.get("result"), list):
-            print("API вернул ошибку:")
-            print(data)
+            print("Ошибка API:")
             return None
 
-        transactions = data["result"]
 
-        print(f"Получено {len(transactions)} транзакций.")
+        filtered=[]
 
-        filtered_transactions = []
 
-        for tx in transactions:
+        for tx in data["result"]:
+
             try:
-                amount = float(tx["value"]) / 10**6
+
+                amount=float(tx["value"])/10**6
 
                 if min_value <= amount <= max_value:
-                    filtered_transactions.append(tx)
+                    filtered.append(tx)
 
-            except (KeyError, ValueError, TypeError):
+            except:
                 continue
 
-        print(f"Подходящих транзакций: {len(filtered_transactions)}")
 
-        if not filtered_transactions:
-            return None
+        print(
+            "Подходящих транзакций:",
+            len(filtered)
+        )
 
-        return random.choice(filtered_transactions)
+
+        if filtered:
+            return random.choice(filtered)
+
+
+        return None
+
 
     except Exception as e:
-        print(f"Ошибка Etherscan: {e}")
+
+        print(
+            "Etherscan error:",
+            e
+        )
+
         return None
 
 
