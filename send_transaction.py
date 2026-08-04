@@ -1,454 +1,112 @@
-import requests
-import random
+import requests,random,time,pytz
 from datetime import datetime
-import pytz
-import time
+
+ETHERSCAN="3JTRMXERPSTG1AY9AV1ZYD1WGRHZNEU3VI"
+BSCSCAN="3JTRMXERPSTG1AY9AV1ZYD1WGRHZNEU3VI"
+TRONSCAN="1dad2f3d-d4e9-4be5-a7eb-51bedf58edfe"
+
+TG_TOKEN="8897185110:AAGZy5xqvOYe4QBslIGJLFezTU_VwZtwbiY"
+TG_CHAT="-1004439708770"
+
+NAMES=["Invoice","Alex0z","CPA-Master","0x27ox","Hawk","Mark","Rick Owens","T1m 24/7","Blessed","DIOR-h8ter","DB-legacy"]
+
+MIN=300
+MAX=1100
 
 
-# ==========================
-# API KEYS
-# ==========================
-
-ETHERSCAN_API_KEY = "3JTRMXERPSTG1AY9AV1ZYD1WGRHZNEU3VI"
-BSCSCAN_API_KEY = "3JTRMXERPSTG1AY9AV1ZYD1WGRHZNEU3VI"
-TRONGRID_API_KEY = "74d034f4-09db-47b6-af19-12bc8e0aae1b"
-
-TELEGRAM_BOT_TOKEN = "8897185110:AAGZy5xqvOYe4QBslIGJLFezTU_VwZtwbiY"
-TELEGRAM_CHAT_ID = "-1004439708770"
+def rnd(x):
+    return 10*(x//10)
 
 
-# ==========================
-# SETTINGS
-# ==========================
-
-NAMES = [
-    "Invoice",
-    "Alex0z",
-    "CPA-Master",
-    "0x27ox",
-    "Hawk",
-    "Mark",
-    "Rick Owens",
-    "T1m 24/7",
-    "Blessed",
-    "DIOR-h8ter",
-    "DB-legacy"
-]
-
-
-MIN_VALUE = 300
-MAX_VALUE = 1100
-
-
-# ==========================
-# HELPERS
-# ==========================
-
-def round_up(value, multiple):
-    return multiple * (value // multiple)
-
-
-
-# ==========================
-# ERC20 ETHEREUM
-# ==========================
-
-def get_erc20_transaction():
-
-    url = "https://api.etherscan.io/api"
-
-    params = {
-        "module": "account",
-        "action": "tokentx",
-        "contractaddress": "0xdac17f958d2ee523a2206206994597c13d831ec7",
-        "startblock": 0,
-        "endblock": 99999999,
-        "sort": "desc",
-        "page": 1,
-        "offset": 100,
-        "apikey": ETHERSCAN_API_KEY
-    }
-
-
+def eth():
     try:
-
-        print("ETHEREUM запрос...")
-
-        r = requests.get(url, params=params, timeout=30)
-
-        data = r.json()
-
-
-        if not isinstance(data.get("result"), list):
-            print(data)
-            return None
+        p={"module":"account","action":"tokentx","contractaddress":"0xdac17f958d2ee523a2206206994597c13d831ec7","page":1,"offset":100,"sort":"desc","apikey":ETHERSCAN}
+        d=requests.get("https://api.etherscan.io/api",params=p).json()
+        if not isinstance(d.get("result"),list):return None
+        for t in d["result"]:
+            a=float(t["value"])/1e6
+            if MIN<=a<=MAX:return {"n":"ERC20","a":a,"h":t["hash"],"t":int(t["timeStamp"])}
+    except Exception as e:print("ETH",e)
 
 
-        result = []
-
-
-        for tx in data["result"]:
-
-            amount = float(tx["value"]) / 10**6
-
-            if MIN_VALUE <= amount <= MAX_VALUE:
-                result.append({
-
-                    "network": "ERC20",
-                    "amount": amount,
-                    "hash": tx["hash"],
-                    "time": tx["timeStamp"]
-
-                })
-
-
-        return random.choice(result) if result else None
-
-
-    except Exception as e:
-
-        print("ERC20 error:", e)
-        return None
-
-
-
-
-# ==========================
-# BEP20 BSC
-# ==========================
-
-def get_bep20_transaction():
-
-    url = "https://api.bscscan.com/api"
-
-
-    params = {
-
-        "module": "account",
-        "action": "tokentx",
-        "contractaddress": "0x55d398326f99059ff775485246999027b3197955",
-        "startblock": 0,
-        "endblock": 99999999,
-        "sort": "desc",
-        "page": 1,
-        "offset": 100,
-        "apikey": BSCSCAN_API_KEY
-
-    }
-
-
+def bsc():
     try:
-
-        print("BSC запрос...")
-
-
-        r = requests.get(url, params=params, timeout=30)
-
-        data = r.json()
-
-
-        if not isinstance(data.get("result"), list):
-            print(data)
-            return None
+        p={"module":"account","action":"tokentx","contractaddress":"0x55d398326f99059ff775485246999027b3197955","page":1,"offset":100,"sort":"desc","apikey":BSCSCAN}
+        d=requests.get("https://api.bscscan.com/api",params=p).json()
+        if not isinstance(d.get("result"),list):return None
+        for t in d["result"]:
+            a=float(t["value"])/1e18
+            if MIN<=a<=MAX:return {"n":"BEP20","a":a,"h":t["hash"],"t":int(t["timeStamp"])}
+    except Exception as e:print("BSC",e)
 
 
-        result = []
-
-
-        for tx in data["result"]:
-
-
-            amount = float(tx["value"]) / 10**18
-
-
-            if MIN_VALUE <= amount <= MAX_VALUE:
-
-                result.append({
-
-                    "network": "BEP20",
-                    "amount": amount,
-                    "hash": tx["hash"],
-                    "time": tx["timeStamp"]
-
-                })
-
-
-        return random.choice(result) if result else None
-
-
-
-    except Exception as e:
-
-        print("BEP20 error:", e)
-        return None
-
-
-
-
-
-# ==========================
-# TRC20 TRON
-# ==========================
-
-def get_trc20_transaction():
-
-    url = "https://api.trongrid.io/v1/contracts/TR7NHqjeKQxGTCi8q8zyF1Jp8p7p3W9qgX/events"
-
-    headers = {
-        "TRON-PRO-API-KEY": TRONGRID_API_KEY
-    }
-
-    params = {
-        "event_name": "Transfer",
-        "limit": 200,
-        "order_by": "block_timestamp,desc"
-    }
-
+def tron():
     try:
+        h={"TRON-PRO-API-KEY":TRONSCAN}
+        p={"limit":200,"start":0}
+        d=requests.get("https://apilist.tronscanapi.com/api/token_trc20/transfers",headers=h,params=p).json()
 
-        print("TRON запрос...")
+        for t in d.get("token_transfers",[]):
+            if t.get("tokenInfo",{}).get("tokenAbbr")!="USDT":continue
+            a=float(t["quant"])/1e6
+            if MIN<=a<=MAX:
+                return {"n":"TRC20","a":a,"h":t["transaction_id"],"t":int(t["block_ts"])/1000}
 
-        response = requests.get(
-            url,
-            headers=headers,
-            params=params,
-            timeout=30
-        )
-
-        data = response.json()
-
-        print(data)
-
-
-        if "data" not in data:
-            return None
-
-
-        transactions = []
-
-
-        for tx in data["data"]:
-
-            try:
-
-                amount = float(
-                    tx["result"]["0"]
-                ) / 10**6
-
-
-                if MIN_VALUE <= amount <= MAX_VALUE:
-
-                    transactions.append({
-
-                        "network": "TRC20",
-                        "amount": amount,
-                        "hash": tx["transaction_id"],
-                        "time": int(tx["block_timestamp"]) // 1000
-
-                    })
-
-
-            except Exception:
-
-                continue
+    except Exception as e:print("TRON",e)
 
 
 
-        print(
-            "Подходящих TRC20:",
-            len(transactions)
-        )
-
-
-        if transactions:
-
-            return random.choice(transactions)
-
-
-        return None
-
-
-
-    except Exception as e:
-
-        print(
-            "TRON error:",
-            e
-        )
-
-        return None
-
-
-
-# ==========================
-# TELEGRAM
-# ==========================
-
-
-def send_message(message):
-
-
-    url = (
-        f"https://api.telegram.org/"
-        f"bot{TELEGRAM_BOT_TOKEN}/sendMessage"
-    )
-
-
-    data = {
-
-        "chat_id": TELEGRAM_CHAT_ID,
-        "text": message,
-        "parse_mode": "HTML"
-
-    }
-
-
+def send(msg):
     try:
-
-        r = requests.post(
-            url,
-            data=data,
-            timeout=30
+        requests.post(
+            f"https://api.telegram.org/bot{TG_TOKEN}/sendMessage",
+            data={"chat_id":TG_CHAT,"text":msg,"parse_mode":"HTML"}
         )
+    except Exception as e:print("TG",e)
 
-
-        print(r.json())
-
-
-    except Exception as e:
-
-        print("Telegram error:", e)
-
-
-
-
-
-# ==========================
-# MAIN
-# ==========================
 
 
 def main():
 
+    print("Запуск")
 
-    print("Запуск...")
+    tx=None
 
-
-    network = random.choice(
-        [
-            "ERC20",
-            "BEP20",
-            "TRC20"
-        ]
-    )
-
-
-    print(
-        "Выбрана сеть:",
-        network
-    )
-
-
-
-    if network == "ERC20":
-
-        tx = get_erc20_transaction()
-
-
-    elif network == "BEP20":
-
-        tx = get_bep20_transaction()
-
-
-    else:
-
-        tx = get_trc20_transaction()
-
-
+    for f in [eth,bsc,tron]:
+        tx=f()
+        if tx:break
 
     if not tx:
-
-        print(
-            "Подходящих транзакций нет"
-        )
-
+        print("Нет транзакций")
         return
 
 
+    amount=rnd(tx["a"])
 
-    amount = round_up(
-        tx["amount"],
-        10
+    worker=amount/2
+
+    dt=datetime.fromtimestamp(
+        tx["t"],
+        pytz.timezone("Europe/Berlin")
+    ).strftime("%H:%M:%S %d-%m-%Y")
+
+
+    msg=(
+        f"💲 Профит у: <b>{random.choice(NAMES)}</b>\n"
+        f"┠ Сумма заноса: <b>{amount:.2f}</b> USDT <i>({tx['n']})</i>\n"
+        f"┖ Доля воркера: <b>{worker:.2f}</b> USDT <i>({tx['n']})</i>\n\n"
+        f"🧬 Hash:\n<code>{tx['h']}</code>\n\n"
+        f"🕔 Время: {dt}"
     )
 
 
-    worker = amount / 2
+    print(msg)
+
+    time.sleep(random.randint(60,900))
+
+    send(msg)
 
 
 
-    zone = pytz.timezone(
-        "Europe/Berlin"
-    )
-
-
-    date = datetime.fromtimestamp(
-        tx["time"],
-        zone
-    ).strftime(
-        "%H:%M:%S %d-%m-%Y"
-    )
-
-
-
-    name = random.choice(
-        NAMES
-    )
-
-
-
-    message = (
-
-        f"💲 Профит у: "
-        f"<b>{name}</b>\n"
-
-        f"┠ Сумма заноса: "
-        f"<b>{amount:.2f}</b> USDT "
-        f"<i>({tx['network']})</i>\n"
-
-        f"┖ Доля воркера: "
-        f"<b>{worker:.2f}</b> USDT "
-        f"<i>({tx['network']})</i>\n\n"
-
-        f"🧬 Hash:\n"
-        f"<code>{tx['hash']}</code>\n\n"
-
-        f"🕔 Время: {date}"
-
-    )
-
-
-
-    delay = random.randint(
-        60,
-        900
-    )
-
-
-    print(
-        f"Ждем {delay} секунд..."
-    )
-
-
-    time.sleep(delay)
-
-
-
-    send_message(
-        message
-    )
-
-
-
-if __name__ == "__main__":
-
+if __name__=="__main__":
     main()
